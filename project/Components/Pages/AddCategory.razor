@@ -1,0 +1,64 @@
+﻿@inject NavigationManager NavigationManager
+@inject AppDbContext DbContext
+@page "/add-Category"
+@using project.Data
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject CataegoryService CataegoryService
+@using System.ComponentModel.DataAnnotations
+@using project.Model
+@using project.Services
+<h3>AddCategory</h3>
+
+<EditForm Method="Post" Model="newCategory" OnValidSubmit="HandleValidSubmit" FormName="Addcategory">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="categoryName">Category Name</label>
+        <InputText id="categoryName" class="form-control" @bind-Value="newCategory.CategoryName" />
+        <ValidationMessage For="@(() => newCategory.CategoryName)" />
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <InputText id="description" class="form-control" @bind-Value="newCategory.Description" />
+        <ValidationMessage For="@(() => newCategory.Description)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Category</button>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    private Category newCategory { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        newCategory = new Category();
+    }
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            // Check if required fields are not null
+            if (string.IsNullOrEmpty(newCategory.CategoryName))
+            {
+                throw new ArgumentException("Category Name cannot be empty.");
+            }
+
+            // DbContext.Categories.Add(newCategory);
+            // await DbContext.SaveChangesAsync();
+            await CataegoryService.AddCategoryAsync(newCategory);
+            newCategory = new Category();
+            Console.WriteLine("Category added successfully."); // Debug message
+                                                               // Clear the form after submission
+            // category = new Category();
+            Navigation.NavigateTo("/categories");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}"); // Log error if any
+        }
+    }
+
+}

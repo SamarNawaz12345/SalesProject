@@ -1,0 +1,235 @@
+﻿@page "/edit-product/{id:int}"
+@inject AppDbContext DbContext
+@inject NavigationManager Navigation
+@using Microsoft.EntityFrameworkCore
+@using project.Data
+@using project.IProductService
+@using project.Model
+@using project.Services
+@rendermode InteractiveServer
+@inject CataegoryService CataegoryService
+@inject ProductService ProductService
+
+<h3>Edit Product</h3>
+
+@if (product == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <EditForm Method="Post" Model="product" OnValidSubmit="HandleValidSubmit"FormName="editproduct">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+         <div class="form-group">
+            <label for="productName">Product Name:</label>
+            <InputText id="productName" class="form-control" @bind-Value="product.ProductName" />
+
+            <ValidationMessage For="@(() => product.ProductName)" />
+        </div> 
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <InputSelect id="category" class="form-control" @bind-Value="product.Category">
+                <option value="">Select a Category</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.CategoryName">@category.CategoryName</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => product.Category)" />
+        </div>
+
+        <div class="form-group">
+            <label for="productCode">Product Code:</label>
+            <InputText id="productCode" class="form-control" @bind-Value="product.ProductCode" />
+            <ValidationMessage For="@(() => product.ProductCode)" />
+        </div>
+
+        <div class="form-group">
+            <label for="sellingPrice">Selling Price:</label>
+            <InputNumber id="sellingPrice" class="form-control" @bind-Value="product.SellingPrice" />
+            <ValidationMessage For="@(() => product.SellingPrice)" />
+        </div>
+
+        <div class="form-group">
+            <label for="quantity">Quantity:</label>
+            <InputNumber id="quantity" class="form-control" @bind-Value="product.Quantity" />
+            <ValidationMessage For="@(() => product.Quantity)" />
+        </div>
+
+        <div class="form-group">
+            <label for="purchasingPrice">Purchasing Price:</label>
+            <InputNumber id="purchasingPrice" class="form-control" @bind-Value="product.PurchasingPrice" />
+            <ValidationMessage For="@(() => product.PurchasingPrice)" />
+        </div>
+
+        <div class="form-group">
+            <label for="expiryDate">Expiry Date:</label>
+            <InputDate id="expiryDate" class="form-control" @bind-Value="product.ExpiryDate" />
+            <ValidationMessage For="@(() => product.ExpiryDate)" />
+        </div>
+
+        <div class="form-group">
+            <label for="volume">Volume:</label>
+            <InputNumber id="volume" class="form-control" @bind-Value="product.Volume" />
+            <ValidationMessage For="@(() => product.Volume)" />
+        </div>
+
+        <div class="form-group">
+            <label for="volumeType">Volume Type:</label>
+           @*  <InputText id="volumeType" class="form-control" @bind-Value="product.VolumeType" /> *@
+            <InputSelect id="volumeType" class="form-control" @bind-Value="product.VolumeType">
+                <option value="">-- Select Volume Type --</option>
+                <option value="kg">KG</option>
+                <option value="mm">mm</option>
+               @*  <option value="Powdered">Powdered</option> *@
+            </InputSelect>
+            <ValidationMessage For="@(() => product.VolumeType)" />
+        </div>
+
+        <div class="form-group">
+            <label for="vendorName">Vendor Name:</label>
+            <InputText id="vendorName" class="form-control" @bind-Value="product.VendorName" />
+        </div>
+
+        <div class="form-group">
+            <label for="vendorNumber">Vendor Number:</label>
+            <InputText id="vendorNumber" class="form-control" @bind-Value="product.VendorNumber" />
+            <ValidationMessage For="@(() => product.VendorNumber)" />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="product.Description" readonly/>
+            <ValidationMessage For="@(() => product.Description)" />
+        </div>
+
+        <div class="form-group">
+            <label for="notifyLimit">Notify Limit:</label>
+            <InputNumber id="notifyLimit" class="form-control" @bind-Value="product.NotifyLimit" />
+            <ValidationMessage For="@(() => product.NotifyLimit)" />
+        </div>
+
+        <div class="form-group">
+            <label for="productPic">Product Picture:</label>
+            @if (product.ProductPic != null)
+            {
+                <img src="@GetImageSource(product.ProductPic)" alt="Product Image" width="150" height="150" />
+            }
+            <InputFile id="productPic" OnChange="@HandleFileSelected" />
+            <ValidationMessage For="@(() => product.ProductPic)" />
+        </div>
+
+        <div class="form-group">
+            <label for="productType">Product Type:</label>
+            <InputSelect id="productType" class="form-control" @bind-Value="product.ProductType">
+                <option value="">-- Select Product Type --</option>
+                <option value="Liquid">Liquid</option>
+                <option value="Solid">Solid</option>
+                <option value="Powdered">Powdered</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => product.ProductType)" />
+        </div>
+        <input type="hidden" id="createdAt" @bind="product.CreatedAt" />
+        <div class="form-group">
+            <label for="tax">Tax (%):</label>
+            <InputNumber id="tax" class="form-control" @bind-Value="product.Tax" step="0.01" />
+            <ValidationMessage For="@(() => product.Tax)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button class="btn btn-danger" @onclick="DeleteProduct">Delete Product</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private Product product = new Product();
+
+    private List<Category> categories = new List<Category>();
+    // Method to save the edited product
+    private async Task SaveProduct()
+    {
+        // Call your ProductService or API to save the edited product
+        await ProductService.UpdateProductAsync(product);
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await CataegoryService.GetCategoriesAsync();
+      //  product = await DbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
+        product = await ProductService.GetProductByIdAsync(id);
+
+
+        if (product == null)
+        {
+            // Handle the case where the product is not found
+            Navigation.NavigateTo("/products");
+        }
+    }
+
+    private string GetImageSource(byte[] image)
+    {
+        if (image != null && image.Length > 0)
+        {
+            return $"data:image/jpeg;base64,{Convert.ToBase64String(image)}";
+        }
+        return null;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+       
+
+        try
+        {
+           // await DbContext.SaveChangesAsync();
+            await ProductService.UpdateProductAsync(product);
+            Navigation.NavigateTo("/products");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            try
+            {
+                var buffer = new byte[file.Size];
+                await file.OpenReadStream().ReadAsync(buffer);
+                product.ProductPic = buffer; // Store as byte array
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task DeleteProduct()
+    {
+        // DbContext.Products.Remove(product);
+        // await DbContext.SaveChangesAsync();
+        // Navigation.NavigateTo("/products");
+        try
+        {
+            await ProductService.DeleteProductAsync(product.Id);
+            Navigation.NavigateTo("/products");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+
+}

@@ -1,0 +1,105 @@
+﻿@page "/edit-salesman/{SalesmanId:int}"
+@using project.IProductService
+@using project.Model
+@using Microsoft.AspNetCore.Components.Forms
+@inject Salesmanservice Salesmanservice
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3>Edit Salesman</h3>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (successMessage != null)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<EditForm Method="Post" Model="currentSalesman" OnValidSubmit="HandleValidSubmit" FormName="editsalesman">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="salesmanName">Salesman Name</label>
+        <InputText id="salesmanName" class="form-control" @bind-Value="currentSalesman.SalesmanName" />
+        <ValidationMessage For="@(() => currentSalesman.SalesmanName)" />
+    </div>
+
+    <div class="form-group">
+        <label for="phoneNumber">Phone Number</label>
+        <InputText id="phoneNumber" class="form-control" @bind-Value="currentSalesman.PhoneNumber" />
+        <ValidationMessage For="@(() => currentSalesman.PhoneNumber)" />
+    </div>
+
+    <div class="form-group">
+        <label for="email">Email Address</label>
+        <InputText id="email" class="form-control" @bind-Value="currentSalesman.EmailAddress" />
+        <ValidationMessage For="@(() => currentSalesman.EmailAddress)" />
+    </div>
+
+    <div class="form-group">
+        <label for="address">Address</label>
+        <InputText id="address" class="form-control" @bind-Value="currentSalesman.Address" />
+        <ValidationMessage For="@(() => currentSalesman.Address)" />
+    </div>
+
+    <div class="form-group">
+        <label for="emergencyNumber">Emergency Number</label>
+        <InputText id="emergencyNumber" class="form-control" @bind-Value="currentSalesman.EmergencyNumber" />
+        <ValidationMessage For="@(() => currentSalesman.EmergencyNumber)" />
+    </div>
+
+    <div class="form-group">
+        <label for="designation">Designation</label>
+        <InputText id="designation" class="form-control" @bind-Value="currentSalesman.Designation" />
+        <ValidationMessage For="@(() => currentSalesman.Designation)" />
+    </div>
+
+    <div class="form-group">
+        <label for="salary">Salary</label>
+        <InputNumber id="salary" class="form-control" @bind-Value="currentSalesman.Salary" />
+        <ValidationMessage For="@(() => currentSalesman.Salary)" />
+    </div>
+
+    <div class="form-group">
+        <label for="commission">Commission</label>
+        <InputNumber id="commission" class="form-control" @bind-Value="currentSalesman.Commission" />
+        <ValidationMessage For="@(() => currentSalesman.Commission)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int SalesmanId { get; set; }
+    private Salesman currentSalesman = new Salesman();
+    private string errorMessage;
+    private string successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentSalesman = await Salesmanservice.GetSalesmanByIdAsync(SalesmanId);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            await Salesmanservice.UpdateSalesmanAsync(SalesmanId, currentSalesman);
+            successMessage = "Salesman updated successfully!";
+            errorMessage = null;
+
+            // Redirect to the SalesmanList page after successful update
+            Navigation.NavigateTo("/SalesmanList");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating salesman: {ex.Message}";
+            successMessage = null;
+        }
+    }
+}

@@ -1,0 +1,63 @@
+﻿@page "/edit-category/{CategoryId:int}"
+@using project.Data
+@using project.Model
+@inject AppDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<h3>Edit Category</h3>
+
+<EditForm Model="category" OnValidSubmit="HandleValidSubmit"FormName="editCatagory">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="categoryName">Category Name</label>
+        <InputText id="categoryName" class="form-control" @bind-Value="category.CategoryName" />
+        <ValidationMessage For="@(() => category.CategoryName)" />
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <InputText id="description" class="form-control" @bind-Value="category.Description" />
+        <ValidationMessage For="@(() => category.Description)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+</EditForm>
+
+@code
+{
+    [Parameter] public int CategoryId { get; set; }
+    private Category category = new Category();
+
+    protected override async Task OnInitializedAsync()
+    {
+        category = await DbContext.Categories.FindAsync(CategoryId);
+        if (category == null)
+        {
+            Navigation.NavigateTo("/categories"); // Redirect if category not found
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            DbContext.Categories.Update(category);
+            await DbContext.SaveChangesAsync();
+            Navigation.NavigateTo("/categories");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/categories");
+    }
+}

@@ -1,0 +1,85 @@
+﻿@page "/categories"
+@using project.Data
+@using project.Model
+@using project.IProductService
+@using Microsoft.EntityFrameworkCore
+@using project.Services
+@inject AppDbContext DbContext
+@rendermode InteractiveServer
+@inject CataegoryService CataegoryService
+@inject HttpClient Http
+<h3>Categories</h3>    
+
+@if (categories == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                  <th>Actions</th>  
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in categories)
+            {
+                <tr>
+                    <td>@category.Id</td>
+                    <td>@category.CategoryName</td>
+                    <td>@category.Description</td>
+                     <td>
+                        <a class="btn btn-warning" href="/edit-category/@category.Id">Edit</a>
+                        <button class="btn btn-danger" @onclick="() => ConfirmDelete(category.Id)">Delete</button>
+                    </td> 
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Category> categories;
+    private int? categoryToDelete;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+
+            //   categories = await DbContext.Categories.ToListAsync();
+            categories = await CataegoryService.GetCategoriesAsync();
+
+        }
+        catch
+        {
+            Console.WriteLine("error categories");
+        }
+    }
+    private void ConfirmDelete(int id)
+    {
+        // Confirm delete action and remove the category
+        categoryToDelete = id;
+        if (categoryToDelete.HasValue)
+        {
+            DeleteCategory(categoryToDelete.Value);
+        }
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        var category = await DbContext.Categories.FindAsync(id);
+        if (category != null)
+        {
+            DbContext.Categories.Remove(category);
+            await DbContext.SaveChangesAsync();
+            categories = await DbContext.Categories.ToListAsync(); // Refresh the list
+        }
+    }
+
+}

@@ -1,0 +1,93 @@
+﻿@page "/settings"
+@inject HttpClient Http
+@using Microsoft.AspNetCore.Components.Forms
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+<h3>Settings</h3>
+
+<EditForm Method="Post" Model="invoiceSettings" OnValidSubmit="SaveSettings" FormName="Setting">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="invoiceNumber">Invoice Number (8 digits):</label>
+        <InputText id="invoiceNumber" class="form-control" @bind-Value="invoiceSettings.InvoiceNumber" />
+        <ValidationMessage For="() => invoiceSettings.InvoiceNumber" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</EditForm>
+@if (!string.IsNullOrEmpty(successMessage))
+ {
+    <div class="alert alert-success">@successMessage</div>
+}
+@code {
+    private string successMessage = "";
+    private bool isUserModified = false; // Track if the user manually modified the invoice number
+
+    private InvoiceSettings invoiceSettings = new InvoiceSettings();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            
+       
+           // Load existing settings
+           var settings = await Http.GetFromJsonAsync<InvoiceSettings>("https://localhost:7008/api/Settings");
+            if (settings != null)
+            {
+             invoiceSettings = settings;
+
+                // Check if the invoice number was set by the user previously
+                 isUserModified = !string.IsNullOrEmpty(invoiceSettings.InvoiceNumber);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading settings: {ex.Message}");
+        }
+    }
+    private void MarkAsModified(ChangeEventArgs e)
+    {
+        // Mark the invoice number as modified when the user changes the input
+        isUserModified = true;
+    }
+    private async Task SaveSettings()
+    {
+        // Save settings to API
+      //  await Http.PostAsJsonAsync("https://localhost:7008/api/settings", invoiceSettings);
+        // Check if the invoice number is valid (ensure it does not increment on refresh)
+        if (!string.IsNullOrEmpty(invoiceSettings.InvoiceNumber) && invoiceSettings.InvoiceNumber.Length == 8 && isUserModified)
+        {
+            try
+            {
+               // InvoiceSettings.SetUserEnteredInvoiceNumber(invoiceSettings.InvoiceNumber);
+                // Save settings to the API
+                var response = await Http.PostAsJsonAsync("https://localhost:7008/api/Settings", invoiceSettings);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    successMessage = "Invoice number saved successfully!";
+                    isUserModified = false; // Reset modification flag after successful save
+                }
+                else
+                {
+                    successMessage = "Error saving the invoice number.";
+                }
+            }
+            catch (Exception ex)
+            {
+                successMessage = $"Error: {ex.Message}";
+            }
+        }
+        else
+        {
+            successMessage = "Please enter a valid 8-digit invoice number.";
+        }
+    }
+
+    public class InvoiceSettings
+    {
+        public  string InvoiceNumber { get; set; }
+    }
+}

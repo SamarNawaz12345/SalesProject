@@ -1,0 +1,88 @@
+﻿@page "/SalesmanList"
+@using project.IProductService
+@using project.Model
+@using Microsoft.AspNetCore.Components.Forms
+@inject Salesmanservice Salesmanservice
+@rendermode InteractiveServer
+
+<h3>Salesman List</h3>
+
+@if (salesmen == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (salesmen.Count == 0)
+{
+    <p>No salesmen found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Salesman Name</th>
+                <th>Phone Number</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>EmergencyNo</th>
+                <th>Designation</th>
+                <th>Salary</th>
+                <th>Commission</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var salesman in salesmen)
+            {
+                <tr>
+                    <td>@salesman.SalesmanName</td>
+                    <td>@salesman.PhoneNumber</td>
+                    <td>@salesman.EmailAddress</td>
+                     <td>@salesman.Address</td>
+                    <td>@salesman.EmergencyNumber</td>
+                    <td>@salesman.Designation</td>
+                    <td>@salesman.Salary</td>
+                    <td>@salesman.Commission</td>
+                    <td>
+                        <a href="@($"/edit-salesman/{salesman.SalesmanId}")" class="btn btn-warning btn-sm">Edit</a>
+                        <button @onclick="() => DeleteSalesman(salesman.SalesmanId)" class="btn btn-danger btn-sm">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Salesman> salesmen = new List<Salesman>();
+    private string errorMessage;
+    private string successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Fetch the list of salesmen from the API via the SalesmanService
+            salesmen = await Salesmanservice.GetSalesmenAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle the error appropriately (logging, user feedback, etc.)
+            Console.WriteLine($"Error loading salesmen: {ex.Message}");
+        }
+    }
+    private async Task DeleteSalesman(int id)
+    {
+        try
+        {
+            await Salesmanservice.DeleteSalesmanAsync(id);
+            successMessage = "Salesman deleted successfully!";
+            errorMessage = null;
+            salesmen = await Salesmanservice.GetSalesmenAsync(); // Refresh list
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting salesman: {ex.Message}";
+            successMessage = null;
+        }
+    }
+}

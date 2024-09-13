@@ -1,0 +1,48 @@
+﻿@page "/category-select"
+@using project.IProductService
+@using project.Model
+@using project.Services
+@inject CataegoryService CataegoryService
+
+
+
+
+<h3>Select a Category</h3>
+
+<select class="form-control">
+    <option value="">Select a Category</option>
+    @foreach (var category in categories)
+    {
+        <option value="@category.Id">@category.CategoryName</option>
+    }
+</select>
+
+<div class="form-group mt-3">
+    <label for="description">Description:</label>
+   
+        <textarea id="description" class="form-control" rows="3" readonly>@selectedCategoryDescription</textarea>
+   
+
+</div>
+
+@code {
+    private List<Category> categories = new List<Category>();
+    private int selectedCategoryId;
+    private string selectedCategoryDescription = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await CataegoryService.GetCategoriesAsync();
+    }
+
+    
+}
+
+@* <select @onchange="OnCategoryChanged">
+    <option value="">Select a Category</option>
+    @foreach (var category in categories)
+    {
+        <option value="@category.Id">@category.CategoryName</option>
+    }
+</select> *@
+

@@ -1,0 +1,373 @@
+﻿@page "/sales"
+@inject HttpClient Http
+@using project.IProductService
+@using project.Model
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@using Microsoft.AspNetCore.Components.Forms
+@inject ProductService ProductService
+@inject Salesmanservice Salesmanservice
+
+<h3>Sales Page</h3>
+<p>Current Invoice Number: @invoiceNumber</p>
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<div class="form-group">
+    <label for="searchQuery">Search Products:</label>
+    <InputText id="searchQuery" class="form-control" @bind-Value="searchQuery" />
+</div>
+<div class="form-group">
+    <label for="salesmanSelect">Select Salesman:</label>
+    <select id="salesmanSelect" class="form-control" @bind="selectedSalesmanId">
+        <option value="">Select Salesman</option>
+        @foreach (var salesman in salesmen)
+        {
+            <option value="@salesman.SalesmanId">@salesman.SalesmanName</option>
+        }
+    </select>
+</div>
+
+ <button class="btn btn-primary mt-2" @onclick="SearchProducts">Search</button>
+ @if (searchResults == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!searchResults.Any())
+{
+    <p>No products found.</p>
+}
+else
+{
+    <table class="table table-striped col-8">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Tax</th>
+                <th>Quantity to Purchase</th>  
+               @*  <th>Salesman</th> *@              
+                 <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in searchResults)
+            {
+                <tr>
+                    <td>@product.ProductName</td>
+                    <td>@product.SellingPrice</td>
+                    <td>@product.Tax</td>
+                    <td>
+                        <InputNumber @bind-Value="product.QuantityToPurchase" class="form-control" min="0" max="@product.Quantity" />
+                    </td>                  
+                   @*  <td>
+                        <select class="form-control" @bind="selectedSalesmanId">
+                             <option value="">Select Salesman</option> 
+                            @foreach (var salesman in salesmen)
+                            {
+                                <option value="@salesman.SalesmanId">@salesman.SalesmanName</option>
+                            }
+                        </select>
+                    </td> *@
+                    <td>
+                       @*  <button class="btn btn-success" @onclick="() => ProcessSale(product)">Complete Sale</button> *@            @*  use later *@
+                        <button class="btn btn-success" @onclick="() => AddToCart(product)">Add to Cart</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<h4>Cart</h4>
+@if (!cart.Any())
+{
+    <p>No products in cart.</p>
+}
+else
+{
+    <table class="table table-striped col-8">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Tax</th>
+                <th>Purchased Quantity</th>
+                 <th>Total (Including Tax)</th> 
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in cart)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.SellingPrice</td>
+                    <td>@item.Tax</td>
+                    <td>@item.QuantityToPurchase</td>
+                    <td>@(item.QuantityToPurchase * item.SellingPrice * (1 + (decimal)item.Tax / 100))</td>
+                    @* <td> <button class="btn btn-success" @onclick="() => ProcessSale(item)">Complete Sale</button></td> *@
+                </tr>
+               
+            }
+        </tbody>
+       @*  <p><strong>Total Amount: @totalAmount</strong></p>
+        <button class="btn btn-success" @onclick="() => ProcessSale(item)">Complete Sale</button> *@
+        <tfoot>
+            <tr>
+                <td colspan="4"><strong>Total Amount:</strong></td>
+                <td>@totalAmount</td>
+            </tr>
+             <tr>
+                <td colspan="5">
+                    <button class="btn btn-success" @onclick="CompleteSale">Complete Sale</button>
+                </td>
+            </tr>
+        </tfoot>
+       @*  <tfoot>
+            <tr>
+                <td colspan="5">
+                    <button class="btn btn-success" @onclick="CompleteSale">Complete Sale</button>
+                </td>
+            </tr>
+        </tfoot> *@
+    </table>
+  @*   <p><strong>Total Amount: @totalAmount</strong></p> *@
+   @*  <button class="btn btn-primary" @onclick="CompleteSale">Complete Sale</button> *@
+   @*  <button class="btn btn-success" @onclick="() => ProcessSale(item)">Complete Sale</button> *@
+}
+@* <p>Sales Page Number: @salesPageNumber</p> *@
+@code {
+    private string invoiceNumber;
+    private string searchQuery;
+    private List<Salesman> salesmen = new List<Salesman>();
+    private List<Product> searchResults = new List<Product>();
+    private int? selectedSalesmanId;
+    private int salesPageNumber;
+    private string errorMessage;
+    private string successMessage;
+    private bool hasIncremented = false; // Flag to ensure increment only once
+    private List<Product> cart = new List<Product>();
+    private decimal totalAmount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //GenerateSalesPageNumber();
+        try
+        {
+            // Load current invoice number
+            var settings = await Http.GetFromJsonAsync<SettingsController.InvoiceSettings>("https://localhost:7008/api/Settings");
+            invoiceNumber = settings?.InvoiceNumber;
+
+            // Increment invoice number
+            if (!hasIncremented && !string.IsNullOrEmpty(invoiceNumber) && invoiceNumber.Length == 8)
+            {
+                    // Increment in a controlled manner
+                    var currentNumber = int.Parse(invoiceNumber);
+                    invoiceNumber = (currentNumber + 1).ToString("D8");
+                    hasIncremented = true; // Set flag to true after increment
+               
+                // Update the invoice number only if needed
+                // if (newInvoiceNumber != invoiceNumber)
+                // {
+                    // var response = await Http.PostAsJsonAsync("https://localhost:7008/api/Settings", new SettingsController.InvoiceSettings { InvoiceNumber = newInvoiceNumber });
+                    // if (response.IsSuccessStatusCode)
+                    // {
+                    //     invoiceNumber = newInvoiceNumber;
+                        
+                    // }
+                    // else
+                    // {
+                    //     Console.WriteLine("Failed to update invoice number.");
+                    // }
+                // }
+            }
+
+             await LoadSalesmen();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing page: {ex.Message}");
+        }
+    }
+
+    private async Task LoadSalesmen()
+    {
+        try
+        {
+            salesmen = await Salesmanservice.GetSalesmenAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading salesmen: {ex.Message}");
+        }
+    }
+    private async Task SearchProducts()
+    {
+        try
+        {
+            Console.WriteLine($"Search query: {searchQuery}"); // Debugging
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                 searchResults = await ProductService.SearchProductsAsync(searchQuery);
+                StateHasChanged();
+            }
+            else
+            {
+                searchResults.Clear();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching products: {ex.Message}");
+        }
+    }
+  
+    private async Task CompleteSale()
+    {
+        try
+        {
+            foreach (var product in cart)
+            {
+                // Ensure user selects a valid quantity to purchase
+                if (product.QuantityToPurchase <= 0 || product.QuantityToPurchase > product.Quantity)
+                {
+                    Console.WriteLine("Invalid quantity selected.");
+                    errorMessage = "Invalid quantity selected.";
+                    return;
+                }
+
+                if (selectedSalesmanId == null)
+                {
+                    Console.WriteLine("No salesman selected.");
+                    errorMessage = "No salesman selected.";
+                    return;
+                }
+
+                // Subtract the selected quantity from the product's available quantity
+                product.Quantity -= product.QuantityToPurchase;
+
+                // Call the service to update the product's quantity in the backend
+                await ProductService.UpdateProductQuantityAsync(product.Id, product.Quantity);
+
+                // Update the invoice number in the Salesman table
+                await Salesmanservice.UpdateCurrentInvoiceNumberAsync(selectedSalesmanId.Value, invoiceNumber);
+
+                Console.WriteLine($"Sale processed. {product.QuantityToPurchase} units of {product.ProductName} sold. Remaining quantity: {product.Quantity}");
+            }
+
+            // Clear cart after sale is complete
+            cart.Clear();
+            totalAmount = 0;
+            successMessage = "Your order has been successfully processed.";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing sale: {ex.Message}");
+        }
+    }
+
+    private async Task ProcessSale(Product product)
+    {
+        try
+        {
+            // Ensure user selects a quantity to purchase
+            if (product.QuantityToPurchase <= 0 || product.QuantityToPurchase > product.Quantity)
+            {
+                Console.WriteLine("Invalid quantity selected.");
+                errorMessage = "Invalid quantity selected.";
+                return;
+            }
+            if (selectedSalesmanId == null)
+            {
+                Console.WriteLine("No salesman selected.");
+                errorMessage = "No salesman selected.";
+                return;
+            }
+            // Subtract the selected quantity from the product's available quantity
+            product.Quantity -= product.QuantityToPurchase;
+
+            // Call the service to update the product's quantity in the backend
+            await ProductService.UpdateProductQuantityAsync(product.Id, product.Quantity);
+
+            // Update the invoice number in the Salesman table
+             await Salesmanservice.UpdateCurrentInvoiceNumberAsync(selectedSalesmanId.Value, invoiceNumber);
+        
+            
+                Console.WriteLine($"Sale processed. {product.QuantityToPurchase} units of {product.ProductName} sold. Remaining quantity: {product.Quantity}");
+             // Clear cart after sale is complete
+        cart.Clear();
+        totalAmount = 0;
+            // Set success message
+            successMessage = "Your order has been successfully processed.";
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing sale: {ex.Message}");
+        }
+    }
+    private void AddToCart(Product product)
+    {
+        // Validate product quantity
+        if (product.QuantityToPurchase <= 0 || product.QuantityToPurchase > product.Quantity)
+        {
+            errorMessage = "Invalid quantity selected.";
+            return;
+        }
+        if (selectedSalesmanId == null)
+        {
+            Console.WriteLine("No salesman selected.");
+            errorMessage = "No salesman selected.";
+            return;
+        }
+        // Add to cart
+        var existingProduct = cart.FirstOrDefault(p => p.Id == product.Id);
+        if (existingProduct == null)
+        {
+            cart.Add(new Product
+                {
+                    Id = product.Id,
+                    ProductName = product.ProductName,
+                    SellingPrice = product.SellingPrice,
+                    Quantity = product.Quantity, // Make sure to copy the quantity available
+                    QuantityToPurchase = product.QuantityToPurchase,
+                    Tax = product.Tax
+                });
+        }
+        else
+        {
+            existingProduct.QuantityToPurchase += product.QuantityToPurchase;
+            // Ensure not to exceed available quantity
+            if (existingProduct.QuantityToPurchase > existingProduct.Quantity)                                      // change it after
+            {
+                existingProduct.QuantityToPurchase = existingProduct.Quantity; // Set to max available
+            }
+        }
+
+        // Recalculate total amount
+       CalculateTotalAmount();
+    }
+
+    private void CalculateTotalAmount()
+    {
+       // totalAmount = cart.Sum(p => p.QuantityToPurchase * p.SellingPrice * (1 + p.Tax / 100));
+        totalAmount = cart.Sum(p => p.QuantityToPurchase * p.SellingPrice * (1 + (decimal)p.Tax / 100));
+    }
+    private void GenerateSalesPageNumber()
+    {
+        Random random = new Random();
+        salesPageNumber = random.Next(10000000, 99999999); // Generates an 8-digit number
+    }
+    public class SettingsController
+    {
+        public class InvoiceSettings
+        {
+            public string InvoiceNumber { get; set; }
+        }
+    }
+}

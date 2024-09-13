@@ -1,0 +1,6 @@
+C:\Users\hp\source\repos\project\ProductAPI\obj\Debug\net8.0\ProductAPI.csproj.AssemblyReference.cache
+C:\Users\hp\source\repos\project\ProductAPI\obj\Debug\net8.0\ProductAPI.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\hp\source\repos\project\ProductAPI\obj\Debug\net8.0\ProductAPI.AssemblyInfoInputs.cache
+C:\Users\hp\source\repos\project\ProductAPI\obj\Debug\net8.0\ProductAPI.AssemblyInfo.cs
+C:\Users\hp\source\repos\project\ProductAPI\obj\Debug\net8.0\ProductAPI.csproj.CoreCompileInputs.cache
+C:\Users\hp\source\repos\project\ProductAPI\obj\Debug\net8.0\ProductAPI.MvcApplicationPartsAssemblyInfo.cache
