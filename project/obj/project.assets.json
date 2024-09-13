@@ -4770,11 +4770,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hp\\source\\repos\\project\\project\\project.csproj",
+      "projectUniqueName": "C:\\Users\\hp\\Desktop\\SalesProject\\project\\project.csproj",
       "projectName": "project",
-      "projectPath": "C:\\Users\\hp\\source\\repos\\project\\project\\project.csproj",
+      "projectPath": "C:\\Users\\hp\\Desktop\\SalesProject\\project\\project.csproj",
       "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\hp\\source\\repos\\project\\project\\obj\\",
+      "outputPath": "C:\\Users\\hp\\Desktop\\SalesProject\\project\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config",

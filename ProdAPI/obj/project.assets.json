@@ -3956,11 +3956,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hp\\source\\repos\\project\\ProdAPI\\ProdAPI.csproj",
+      "projectUniqueName": "C:\\Users\\hp\\Desktop\\SalesProject\\ProdAPI\\ProdAPI.csproj",
       "projectName": "ProdAPI",
-      "projectPath": "C:\\Users\\hp\\source\\repos\\project\\ProdAPI\\ProdAPI.csproj",
+      "projectPath": "C:\\Users\\hp\\Desktop\\SalesProject\\ProdAPI\\ProdAPI.csproj",
       "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\hp\\source\\repos\\project\\ProdAPI\\obj\\",
+      "outputPath": "C:\\Users\\hp\\Desktop\\SalesProject\\ProdAPI\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -3978,8 +3978,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "C:\\Users\\hp\\source\\repos\\project\\project\\project.csproj": {
-              "projectPath": "C:\\Users\\hp\\source\\repos\\project\\project\\project.csproj"
+            "C:\\Users\\hp\\Desktop\\SalesProject\\project\\project.csproj": {
+              "projectPath": "C:\\Users\\hp\\Desktop\\SalesProject\\project\\project.csproj"
             }
           }
         }
